@@ -1,0 +1,83 @@
+import React, { useState } from 'react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+
+export default function AiChefApp() {
+  const [ingredients, setIngredients] = useState('');https://github.com/Max-bruns/ai-chef/tree/main
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [vegetarianOnly, setVegetarianOnly] = useState(false);
+  const [veganOnly, setVeganOnly] = useState(false);
+
+  const handleSearch = async () => {
+    if (!ingredients) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const url = new URL(`https://ai-chef-api.onrender.com/api/recipes`);
+      url.searchParams.append('ingredients', ingredients);
+      if (vegetarianOnly) url.searchParams.append('filter', 'vegetarian');
+      if (veganOnly) url.searchParams.append('filter', 'vegan');
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("API error");
+      const data = await res.json();
+      setRecipes(data);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white p-6 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4 text-center">AI Chef 🍳</h1>
+
+      <div className="flex gap-2 mb-3">
+        <Input
+          placeholder="Enter ingredients (e.g. tomato, chicken, rice)"
+          value={ingredients}
+          onChange={(e) => setIngredients(e.target.value)}
+        />
+        <Button onClick={handleSearch} disabled={loading}>
+          {loading ? 'Searching...' : 'Find Recipes'}
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-4 mb-6">
+        <label className="flex items-center gap-2">
+          <Checkbox checked={vegetarianOnly} onCheckedChange={setVegetarianOnly} />
+          Vegetarian only
+        </label>
+        <label className="flex items-center gap-2">
+          <Checkbox checked={veganOnly} onCheckedChange={setVeganOnly} />
+          Vegan only
+        </label>
+      </div>
+
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+      <div className="grid gap-4">
+        {recipes.map((recipe, index) => (
+          <Card key={index}>
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold">{recipe.title} {recipe.flag}</h2>
+              <p>⏱️ Time: {recipe.time}</p>
+              <p>🔥 Difficulty: {recipe.difficulty}</p>
+              <p>⚡ Calories: {recipe.calories}</p>
+              <p>🌍 Country: {recipe.country}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <footer className="text-center text-sm text-gray-500 mt-10">
+        Developed by Max Bruns
+      </footer>
+    </div>
+  );
+}
